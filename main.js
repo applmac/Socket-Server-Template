@@ -1,25 +1,32 @@
-const WebSocket = require('ws');
+// This is a list of all connected clients
+const clients = [];
 
-const wss = new WebSocket.Server({ port: 8080 });
+// This function is called when a client connects
+function onConnection(client) {
+    // Add the client to the list of connected clients
+    clients.push(client);
 
-// Keep track of all connected clients
-const clients = new Set();
+    // This function is called when the client sends a message
+    client.on('message', function(message) {
+        // Parse the message as JSON
+        const data = JSON.parse(message);
 
-wss.on('connection', function connection(ws) {
-  // Add the new client to the set
-  clients.add(ws);
+        // If the message is a 'move' message, send it to all other clients
+        if (data.type === 'move') {
+            for (const otherClient of clients) {
+                if (otherClient !== client) {
+                    otherClient.send(message);
+                }
+            }
+        }
+    });
 
-  ws.on('message', function incoming(message) {
-    // Broadcast the message to all clients
-    for (const client of clients) {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    }
-  });
-
-  ws.on('close', function() {
-    // Remove the client from the set when it disconnects
-    clients.delete(ws);
-  });
-});
+    // This function is called when the client disconnects
+    client.on('close', function() {
+        // Remove the client from the list of connected clients
+        const index = clients.indexOf(client);
+        if (index !== -1) {
+            clients.splice(index, 1);
+        }
+    });
+}
