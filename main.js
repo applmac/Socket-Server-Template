@@ -48,20 +48,15 @@ wss.on("connection", function (ws, req) {
 });
 
 // Implement broadcast function because ws doesn't have it
+// Implement broadcast function because ws doesn't have it
 const broadcast = (message) => {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
     }
   });
-} else {
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  }
 };
+
 
 /**
  * Sends a ping message to all connected clients every 50 seconds
