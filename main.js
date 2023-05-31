@@ -29,12 +29,14 @@ wss.on("connection", function (ws, req) {
   }
 
   ws.on("message", (data) => {
-    let stringifiedData = data.toString();
-    if (stringifiedData === 'pong') {
-      console.log('keepAlive');
-      return;
+    let parsedData = JSON.parse(data.toString());
+    if (parsedData.type === 'board') {
+        broadcast(data);
+    } else if (parsedData === 'pong') {
+        console.log('keepAlive');
+        return;
     }
-    broadcast(stringifiedData);
+    broadcast(parsedData);
   });
 
   ws.on("close", (data) => {
@@ -47,7 +49,6 @@ wss.on("connection", function (ws, req) {
   });
 });
 
-// Implement broadcast function because ws doesn't have it
 // Implement broadcast function because ws doesn't have it
 const broadcast = (message) => {
   wss.clients.forEach((client) => {
