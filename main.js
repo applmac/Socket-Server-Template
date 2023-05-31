@@ -29,14 +29,24 @@ wss.on("connection", function (ws, req) {
   }
 
   ws.on("message", (data) => {
-    let parsedData = JSON.parse(data.toString());
-    if (parsedData.type === 'board') {
-        broadcast(data);
-    } else if (parsedData === 'pong') {
+    try {
+      let parsedData = JSON.parse(data.toString());
+      if (parsedData.type === 'board') {
+        // Validate the board data before broadcasting
+        if (Array.isArray(parsedData.board) && parsedData.board.length === 9) {
+          broadcast(data);
+        } else {
+          console.error('Invalid board data received:', parsedData.board);
+        }
+      } else if (parsedData === 'pong') {
         console.log('keepAlive');
         return;
+      } else {
+        broadcast(parsedData);
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
     }
-    broadcast(parsedData);
   });
 
   ws.on("close", (data) => {
