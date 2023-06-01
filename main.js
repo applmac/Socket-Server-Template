@@ -3,13 +3,13 @@ const express = require("express");
 const app = express();
 
 app.use(express.static("public"));
-// require("dotenv").config();
 
 const serverPort = process.env.PORT || 3000;
 const server = http.createServer(app);
 const WebSocket = require("ws");
 
 let keepAliveId;
+let clientId = 0; // Add this line
 
 const wss =
   process.env.NODE_ENV === "production"
@@ -20,6 +20,7 @@ server.listen(serverPort);
 console.log(`Server started on port ${serverPort} in stage ${process.env.NODE_ENV}`);
 
 wss.on("connection", function (ws, req) {
+  ws.id = clientId++; // Add this line
   console.log("Connection Opened");
   console.log("Client size: ", wss.clients.size);
 
@@ -34,7 +35,9 @@ wss.on("connection", function (ws, req) {
       console.log('keepAlive');
       return;
     }
-    broadcast(stringifiedData);
+    const message = JSON.parse(stringifiedData);
+    message.clientId = ws.id; // Add this line
+    broadcast(JSON.stringify(message)); // Modify this line
   });
 
   ws.on("close", (data) => {
@@ -47,8 +50,6 @@ wss.on("connection", function (ws, req) {
   });
 });
 
-// Implement broadcast function because ws doesn't have it
-// Implement broadcast function because ws doesn't have it
 const broadcast = (message) => {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -57,11 +58,7 @@ const broadcast = (message) => {
   });
 };
 
-
-/**
- * Sends a ping message to all connected clients every 50 seconds
- */
- const keepServerAlive = () => {
+const keepServerAlive = () => {
   keepAliveId = setInterval(() => {
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
@@ -70,7 +67,6 @@ const broadcast = (message) => {
     });
   }, 50000);
 };
-
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
