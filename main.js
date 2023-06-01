@@ -10,6 +10,7 @@ const WebSocket = require("ws");
 
 let keepAliveId;
 let clientId = 0;
+let highlights = {}; // Add this line
 
 const wss =
   process.env.NODE_ENV === "production"
@@ -21,7 +22,8 @@ console.log(`Server started on port ${serverPort} in stage ${process.env.NODE_EN
 
 wss.on("connection", function (ws, req) {
   ws.id = clientId++;
-  ws.send(JSON.stringify({ type: 'assignId', id: ws.id })); // Add this line
+  ws.send(JSON.stringify({ type: 'assignId', id: ws.id }));
+
   console.log("Connection Opened");
   console.log("Client size: ", wss.clients.size);
 
@@ -38,11 +40,17 @@ wss.on("connection", function (ws, req) {
     }
     const message = JSON.parse(stringifiedData);
     message.clientId = ws.id;
+    if (message.type === 'board') {
+      highlights[ws.id] = message.selectedCell;
+      message.highlights = highlights; // Add this line
+    }
     broadcast(JSON.stringify(message));
   });
 
   ws.on("close", (data) => {
     console.log("closing connection");
+    delete highlights[ws.id]; // Add this line
+    broadcast(JSON.stringify({ type: 'board', highlights: highlights })); // Add this line
 
     if (wss.clients.size === 0) {
       console.log("last client disconnected, stopping keepAlive interval");
