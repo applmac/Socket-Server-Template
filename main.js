@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const WebSocket = require("ws");
 
 let keepAliveId;
-let clientId = 0; // Add this line
+let clientId = 0;
 
 const wss =
   process.env.NODE_ENV === "production"
@@ -20,7 +20,8 @@ server.listen(serverPort);
 console.log(`Server started on port ${serverPort} in stage ${process.env.NODE_ENV}`);
 
 wss.on("connection", function (ws, req) {
-  ws.id = clientId++; // Add this line
+  ws.id = clientId++;
+  ws.send(JSON.stringify({ type: 'assignId', id: ws.id })); // Add this line
   console.log("Connection Opened");
   console.log("Client size: ", wss.clients.size);
 
@@ -36,8 +37,8 @@ wss.on("connection", function (ws, req) {
       return;
     }
     const message = JSON.parse(stringifiedData);
-    message.clientId = ws.id; // Add this line
-    broadcast(JSON.stringify(message)); // Modify this line
+    message.clientId = ws.id;
+    broadcast(JSON.stringify(message));
   });
 
   ws.on("close", (data) => {
